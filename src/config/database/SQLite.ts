@@ -85,7 +85,8 @@ export class SQLite extends DataBase {
             this.queryAll<CustomVoice>(`SELECT *
                                         FROM audio_inline
                                         WHERE title LIKE ?
-                                          AND bot_id = ?`, [`%${title}%`, botId])
+                                          AND bot_id = ?
+                                        ORDER BY title ASC`, [`%${title}%`, botId])
                 .then((rows: CustomVoice[]) => resolve(rows))
                 .catch(err => reject(err));
         });
