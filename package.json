@@ -1,0 +1,27 @@
+{
+  "name": "TGSoundBot",
+  "version": "2.0.0",
+  "description": "Inline bot for Telegram",
+  "author": "BrainRTP",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "node dist/index.js",
+    "build": "tsc",
+    "dev": "tsc && node dist/index.js"
+  },
+  "dependencies": {
+    "@types/node": "^18.16.1",
+    "audio-converter": "1.0.13",
+    "js-logger": "~1.6.1",
+    "node-telegram-bot-api": "^0.61.0",
+    "sqlite": "^5.0.1",
+    "sqlite3": "^5.1.6",
+    "typescript": "~5.1.6",
+    "uuid": "~9.0.0"
+  },
+  "devDependencies": {
+    "@types/node-telegram-bot-api": "^0.61.6",
+    "audio-converter": "1.0.13",
+    "prettier": "~3.0.0"
+  }
+}

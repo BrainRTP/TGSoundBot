@@ -1,0 +1,10 @@
+{
+  "adminList": [
+    200681892
+  ],
+  "database": {
+    "type": "SQLITE",
+    "databaseName": "database.db"
+  },
+  "botToken": "your bot token"
+}
