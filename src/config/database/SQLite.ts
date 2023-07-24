@@ -62,7 +62,8 @@ export class SQLite extends DataBase {
         return new Promise((resolve, reject) => {
             this.queryAll<CustomVoice>(`SELECT *
                                         FROM audio_inline
-                                        WHERE bot_id = ?`, [botId])
+                                        WHERE bot_id = ?
+                                        ORDER BY title ASC`, [botId])
                 .then((rows) => resolve(rows))
                 .catch(err => reject(err));
         });
