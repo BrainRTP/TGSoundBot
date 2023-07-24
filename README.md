@@ -2,7 +2,7 @@
 <a href="https://github.com/rishz/URL-Shortener/blob/master/LICENSE"><img src="https://img.shields.io/badge/License-MIT-red.svg" alt="license"/></a>
 <a href="https://github.com/rishz/URL-Shortener/blob/master/LICENSE"><img src="https://img.shields.io/badge/version-2.0.0-blue" alt="license"/></a>
 
-**TGSoundBot** - это бот для Telegram, написанный на Node.js 18 с использованием TypeScript и node-telegram-bot-api. Бот предназначен для отправки inline аудиозаписей в любом чате Telegram. Он также поддерживает добавление новых аудио через чат с ботом в виде аудио файлов или голосовых сообщений.
+**TGSoundBot** - это бот для Telegram, написанный на Node.js 18 с использованием TypeScript и [node-telegram-bot-api](https://github.com/yagop/node-telegram-bot-api). Бот предназначен для отправки inline аудиозаписей в любом чате Telegram. Он также поддерживает добавление новых аудио через чат с ботом в виде аудио файлов или голосовых сообщений.
 
 BotDemo - [@ugarSoundBot](https://t.me/ugarSoundBot)
 
