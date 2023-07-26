@@ -4,8 +4,8 @@ import { Bot } from '../bot';
 import { ILogger } from 'js-logger';
 import { createLogger } from '../utils/logger/logger';
 import { DataBase } from '../config/database/DataBase';
-import TelegramBot = require('node-telegram-bot-api');
 import { CustomVoice } from '../utils/types/type';
+import TelegramBot = require('node-telegram-bot-api');
 
 export class InlineListener {
     private readonly logger: ILogger = createLogger('InlineListener');
@@ -30,9 +30,9 @@ export class InlineListener {
                     if (voices === undefined || voices.length === 0) {
                         return;
                     }
-                    resultAudioList = voices.map((voice: CustomVoice) => (
+                    resultAudioList = voices.map((voice: CustomVoice, index) => (
                         {
-                            id: voice.id,
+                            id: String(index),
                             title: voice.title,
                             voice_url: voice.voice_url,
                             type: 'voice'
@@ -45,9 +45,9 @@ export class InlineListener {
                     if (voices === undefined || voices.length === 0) {
                         return;
                     }
-                    resultAudioList = voices.map((voice: CustomVoice) => (
+                    resultAudioList = voices.map((voice: CustomVoice, index) => (
                         {
-                            id: voice.id,
+                            id: String(index),
                             title: voice.title,
                             voice_url: voice.voice_url,
                             type: 'voice'

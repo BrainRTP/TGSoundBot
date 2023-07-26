@@ -1,12 +1,14 @@
 // Вспомогательный класс для обработки сообщений
-import { Message, Metadata } from 'node-telegram-bot-api';
+import { InlineKeyboardMarkup, Message, Metadata } from 'node-telegram-bot-api';
 import { ILogger } from 'js-logger';
 import { createLogger } from '../utils/logger/logger';
 import { BotConfig } from '../config/BotConfig';
 import { Bot } from '../bot';
-import { CustomVoice, ExtendedMessage, SoundFile, SoundType } from '../utils/types/type';
+import { CacheInfo, CustomVoice, ExtendedMessage, SoundFile, SoundType } from '../utils/types/type';
 import { randomUUID } from 'crypto';
 import { WriteStream } from 'fs';
+import { getReplayInlineKeyboard } from '../utils/inline/inlineKeyboard';
+import * as NodeCache from 'node-cache';
 import TelegramBot = require('node-telegram-bot-api');
 import fs = require('fs');
 import ErrnoException = NodeJS.ErrnoException;
@@ -16,11 +18,13 @@ export class MessageListener {
     private readonly bot: TelegramBot;
     private readonly botInstance: Bot;
     private readonly config: BotConfig;
+    private readonly voiceCache: NodeCache;
 
     constructor(botInstance: Bot) {
         this.botInstance = botInstance;
         this.bot = botInstance.getBot();
         this.config = botInstance.getConfig();
+        this.voiceCache = botInstance.getVoiceCache();
     }
 
     public handleMessage(msg: ExtendedMessage, metadata?: Metadata) {
@@ -39,6 +43,7 @@ export class MessageListener {
             return;
         }
 
+
         this.parseSoundFile(msg)
             .then((soundFile: SoundFile) => {
                 this.saveAndSendVoice(msg, soundFile);
@@ -56,20 +61,27 @@ export class MessageListener {
                         return;
                     }
                     const voiceId: string = result.voice.file_id;
-                    const completeMessage = `Голосовое сообщение успешно загружено\n\nНазвание: ${msg.caption ?? soundFile.fileName} \n\nid: ${voiceId}`;
+                    const completeMessage = 'Голосовое сообщение предварительно загружено\n\n<b>Название</b>: ' + (msg.caption ?? soundFile.fileName) + '\n\n<b>id</b>: <code>' + voiceId + '</code>';
 
-                    this.saveVoice(msg, result, soundFile.fileName)
-                        .then(() => {
-                            this.bot.editMessageCaption(completeMessage, {
-                                chat_id: msg.chat.id,
-                                message_id: result.message_id
-                            }).catch((err) => {
-                                this.logger.error('Ошибка при отправке голосового сообщения', err);
-                            });
-                        })
-                        .catch((err) => {
-                            this.logger.error('Ошибка при сохранении голосового сообщения', err);
-                        });
+                    this.bot.editMessageCaption(completeMessage, {
+                        chat_id: msg.chat.id,
+                        message_id: result.message_id,
+                        reply_markup: getReplayInlineKeyboard(),
+                        parse_mode: 'HTML'
+                    }).catch((err) => {
+                        this.logger.error('Ошибка при отправке результата обработки сообщения', err);
+                    });
+
+                    const oldCache = this.voiceCache.get<CacheInfo[]>(msg.chat.id) ?? [];
+                    const cacheInfo: CacheInfo = {
+                        messageId: msg.message_id,
+                        customVoice: this.getCustomVoice(msg, result, soundFile.fileName)
+                    };
+
+                    this.voiceCache.set<CacheInfo[]>(msg.chat.id, [
+                        ...oldCache,
+                        cacheInfo
+                    ]);
                 })
                 .catch((err) => {
                     this.logger.error('Неизвестная ошибка при отправке голосового сообщения', err);
@@ -77,25 +89,17 @@ export class MessageListener {
         });
     }
 
-    private async saveVoice(originalMsg: ExtendedMessage, result: Message, fileName: string): Promise<void> {
-        if (result.voice === undefined || result.voice.file_id === undefined) {
-            return;
+    private getCustomVoice(originalMsg: ExtendedMessage, result: Message, fileName: string): CustomVoice {
+        if (result.voice === undefined) {
+            throw new Error('Невозможно получить CustomVoice из сообщения');
         }
 
-        const voice: CustomVoice = {
+        return {
             id: result.voice?.file_id,
             title: originalMsg.caption ?? fileName,
             voice_url: result.voice?.file_id,
             botId: this.botInstance.getBotId() ?? 0
         };
-
-        await this.botInstance.getDB().saveVoice(voice)
-            .then(() => {
-                this.logger.debug(`Голосовое сообщение ${voice.title} успешно добавлено`);
-            })
-            .catch((err) => {
-                this.logger.error('Ошибка при добавлении голосового сообщения', err);
-            });
     }
 
     private async parseSoundFile(msg: ExtendedMessage): Promise<SoundFile> {

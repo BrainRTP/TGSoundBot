@@ -21,7 +21,17 @@ export enum SoundType {
     VOICE = 'VOICE',
 }
 
+export enum CallbackQueryInlineButtonType {
+    SAVE = 'Сохранить',
+    CANCEL = 'Отменить',
+}
+
 export interface SoundFile {
     filePath: string;
     fileName: string;
+}
+
+export interface CacheInfo {
+    messageId: number;
+    customVoice: CustomVoice;
 }
