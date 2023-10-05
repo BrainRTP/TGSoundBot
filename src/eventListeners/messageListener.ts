@@ -63,10 +63,12 @@ export class MessageListener {
                     const voiceId: string = result.voice.file_id;
                     const completeMessage = 'Голосовое сообщение предварительно загружено\n\n<b>Название</b>: ' + (msg.caption ?? soundFile.fileName) + '\n\n<b>id</b>: <code>' + voiceId + '</code>';
 
+                    const customVoice: CustomVoice = this.getCustomVoice(msg, result, soundFile.fileName);
+
                     this.bot.editMessageCaption(completeMessage, {
                         chat_id: msg.chat.id,
                         message_id: result.message_id,
-                        reply_markup: getReplayInlineKeyboard(),
+                        reply_markup: getReplayInlineKeyboard(customVoice),
                         parse_mode: 'HTML'
                     }).catch((err) => {
                         this.logger.error('Ошибка при отправке результата обработки сообщения', err);
@@ -75,7 +77,7 @@ export class MessageListener {
                     const oldCache = this.voiceCache.get<CacheInfo[]>(msg.chat.id) ?? [];
                     const cacheInfo: CacheInfo = {
                         messageId: msg.message_id,
-                        customVoice: this.getCustomVoice(msg, result, soundFile.fileName)
+                        customVoice: customVoice
                     };
 
                     this.voiceCache.set<CacheInfo[]>(msg.chat.id, [
@@ -98,7 +100,8 @@ export class MessageListener {
             id: result.voice?.file_id,
             title: originalMsg.caption ?? fileName,
             voice_url: result.voice?.file_id,
-            botId: this.botInstance.getBotId() ?? 0
+            botId: this.botInstance.getBotId() ?? 0,
+            isHidden: false
         };
     }
 

@@ -2,6 +2,7 @@ import { InlineQueryResultVoice, Message } from 'node-telegram-bot-api';
 
 export interface CustomVoice extends Pick<InlineQueryResultVoice, 'id' | 'title' | 'voice_url'> {
     botId: number;
+    isHidden: boolean;
 }
 
 export interface ExtendedMessage extends Message {
@@ -22,8 +23,9 @@ export enum SoundType {
 }
 
 export enum CallbackQueryInlineButtonType {
-    SAVE = 'Сохранить',
-    CANCEL = 'Отменить',
+    SAVE = 'SAVE',
+    CANCEL = 'CANCEL',
+    SWITCH_HIDDEN = 'SWITCH_HIDDEN'
 }
 
 export interface SoundFile {

@@ -7,6 +7,7 @@ import { DataBase } from '../config/database/DataBase';
 import { CacheInfo, CallbackQueryInlineButtonType, CustomVoice } from '../utils/types/type';
 import * as NodeCache from 'node-cache';
 import TelegramBot = require('node-telegram-bot-api');
+import { getReplayInlineKeyboard } from '../utils/inline/inlineKeyboard';
 
 export class CallbackQueryListener {
     private readonly logger: ILogger = createLogger('CallbackQueryListener');
@@ -60,8 +61,21 @@ export class CallbackQueryListener {
             if (ctx.message?.chat !== undefined) {
                 this.removeFromCache(ctx, messageIdQuery, ctx.message.chat.id);
             }
-            this.logger.error('Неизвестный тип inline кнопки');
+        } else if (callbackQueryInlineButtonType === CallbackQueryInlineButtonType.SWITCH_HIDDEN) {
+            const customVoice: CustomVoice = {...cache.customVoice, isHidden: !cache.customVoice.isHidden};
+            this.updateCacheCustomVoice(customVoice, ctx, messageIdQuery, ctx.message.chat.id);
+            this.updateInlineKeyboard(customVoice, ctx);
         }
+    }
+
+    private updateInlineKeyboard(customVoice: CustomVoice, ctx: CallbackQuery){
+
+        this.bot.editMessageReplyMarkup(getReplayInlineKeyboard(customVoice), {
+            chat_id: ctx.message?.chat.id,
+            message_id: ctx.message?.message_id
+        }).catch((err) => {
+            this.logger.error('Ошибка при отправке результата обработки сообщения', err);
+        })
     }
 
     private removeFromCache(ctx: CallbackQuery, messageIdQuery: number, chatId: number) {
@@ -71,6 +85,27 @@ export class CallbackQueryListener {
         }
 
         const cache = this.voiceCache.get<CacheInfo[]>(ctx.message.chat.id)?.filter((cacheInfo: CacheInfo) => cacheInfo.messageId !== messageIdQuery - 1);
+
+        if (cache === undefined) {
+            this.logger.error('Не найдено голосовое сообщение в кэше');
+            return;
+        }
+
+        this.voiceCache.set<CacheInfo[]>(chatId, cache);
+    }
+
+    private updateCacheCustomVoice(customVoice: CustomVoice, ctx: CallbackQuery, messageIdQuery: number, chatId: number) {
+        if (ctx.message?.chat === undefined) {
+            this.logger.error('Не найдено голосовое сообщение в кэше');
+            return;
+        }
+
+        const cache = this.voiceCache.get<CacheInfo[]>(ctx.message.chat.id)?.map((cacheInfo: CacheInfo) => {
+            if (cacheInfo.messageId == messageIdQuery - 1) {
+                return {...cacheInfo, customVoice}
+            }
+            return cacheInfo;
+        })
 
         if (cache === undefined) {
             this.logger.error('Не найдено голосовое сообщение в кэше');
