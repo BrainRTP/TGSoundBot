@@ -51,7 +51,7 @@ export class SQLite extends DataBase {
             const voiceName: string = voice.title;
             const voicePath: string = voice.voice_url;
             const botId: number = voice.botId;
-            const isHidden: boolean = voice.isHidden;
+            const isHidden: number = Number(voice.isHidden);
             this.queryInsert(`INSERT INTO audio_inline (inline_type, title, voice_url, bot_id, is_hidden)
                               VALUES ('voice', '${voiceName}', '${voicePath}', '${botId}', '${isHidden}')`)
                 .then(() => resolve())
@@ -61,14 +61,14 @@ export class SQLite extends DataBase {
 
     async getAllVoices(botId: number | undefined, isHidden: boolean, limit: number, offset: number): Promise<CustomVoice[]> {
         return new Promise((resolve, reject) => {
-            this.queryAll<CustomVoice>(`SELECT *
+            this.queryAll<CustomVoice>(`SELECT id, inline_type AS inlineType, title, voice_url AS voiceUrl, bot_id AS botId, is_hidden AS isHidden
                                         FROM audio_inline
                                         WHERE bot_id = ?
                                             AND is_hidden = 0
                                            OR (is_hidden = 1 AND is_hidden = ?)
                                         ORDER BY title ASC
                                         LIMIT ?
-                                        OFFSET ?`, [botId, isHidden, limit, offset])
+                                        OFFSET ?`, [botId, Number(isHidden), limit, offset])
                 .then((rows) => resolve(rows))
                 .catch(err => reject(err));
         });
@@ -76,7 +76,7 @@ export class SQLite extends DataBase {
 
     async getVoiceById(id: number): Promise<CustomVoice> {
         return new Promise((resolve, reject) => {
-            this.queryGet<CustomVoice>(`SELECT *
+            this.queryGet<CustomVoice>(`SELECT id, inline_type AS inlineType, title, voice_url AS voiceUrl, bot_id AS botId, is_hidden AS isHidden
                                         FROM audio_inline
                                         WHERE id = ?
                                         LIMIT (1)`, [id])
@@ -87,14 +87,14 @@ export class SQLite extends DataBase {
 
     async getVoiceByTitleInclude(title: string, botId: number | undefined, isHidden: boolean, limit: number, offset: number): Promise<CustomVoice[]> {
         return new Promise((resolve, reject) => {
-            this.queryAll<CustomVoice>(`SELECT *
+            this.queryAll<CustomVoice>(`SELECT id, inline_type AS inlineType, title, voice_url AS voiceUrl, bot_id AS botId, is_hidden AS isHidden
                                         FROM audio_inline
                                         WHERE title LIKE ?
                                           AND bot_id = ?
                                           AND is_hidden = 0 OR (is_hidden = 1 AND is_hidden = ?)
                                         ORDER BY title ASC
                                         LIMIT ?
-                                        OFFSET ?`, [`%${title}%`, botId, isHidden, limit, offset])
+                                        OFFSET ?`, [`%${title}%`, botId, Number(isHidden), limit, offset])
                 .then((rows: CustomVoice[]) => resolve(rows))
                 .catch(err => reject(err));
         });

@@ -2,7 +2,7 @@ import { InlineQueryResultVoice, Message } from 'node-telegram-bot-api';
 
 export interface CustomVoice extends Pick<InlineQueryResultVoice, 'id' | 'title' | 'voice_url'> {
     botId: number;
-    isHidden: boolean;
+    isHidden: boolean | number;
 }
 
 export interface ExtendedMessage extends Message {
@@ -15,6 +15,11 @@ export interface ExtendedMessage extends Message {
     audio: Message['audio'] & {
         file_name: string;
     };
+}
+export enum Command {
+    LIST = 'LIST',
+    LIST_SORT = 'LIST_SORT',
+    EDIT = 'EDIT'
 }
 
 export enum SoundType {

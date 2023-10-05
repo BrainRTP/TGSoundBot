@@ -1,14 +1,15 @@
 // Вспомогательный класс для обработки сообщений
-import { InlineKeyboardMarkup, Message, Metadata } from 'node-telegram-bot-api';
+import { Message, Metadata } from 'node-telegram-bot-api';
 import { ILogger } from 'js-logger';
 import { createLogger } from '../utils/logger/logger';
 import { BotConfig } from '../config/BotConfig';
 import { Bot } from '../bot';
-import { CacheInfo, CustomVoice, ExtendedMessage, SoundFile, SoundType } from '../utils/types/type';
+import { CacheInfo, Command, CustomVoice, ExtendedMessage, SoundFile, SoundType } from '../utils/types/type';
 import { randomUUID } from 'crypto';
 import { WriteStream } from 'fs';
 import { getReplayInlineKeyboard } from '../utils/inline/inlineKeyboard';
 import * as NodeCache from 'node-cache';
+import { DataBase } from '../config/database/DataBase';
 import TelegramBot = require('node-telegram-bot-api');
 import fs = require('fs');
 import ErrnoException = NodeJS.ErrnoException;
@@ -19,12 +20,14 @@ export class MessageListener {
     private readonly botInstance: Bot;
     private readonly config: BotConfig;
     private readonly voiceCache: NodeCache;
+    private readonly db: DataBase;
 
     constructor(botInstance: Bot) {
         this.botInstance = botInstance;
         this.bot = botInstance.getBot();
         this.config = botInstance.getConfig();
         this.voiceCache = botInstance.getVoiceCache();
+        this.db = botInstance.getDB();
     }
 
     public handleMessage(msg: ExtendedMessage, metadata?: Metadata) {
@@ -33,7 +36,9 @@ export class MessageListener {
             return;
         }
 
-        this.logger.debug(`${msg.from.username} -> [${msg.text}]`);
+        const isAudioMessage = this.checkMessageContainsAudio(msg);
+
+        this.logger.debug(`${msg.from.username} -> [${msg.text ?? isAudioMessage ? 'audio/voice' : 'undefined'}]`);
 
         if (!this.config.getConfig()?.adminList.includes(msg.from.id)) {
             this.bot.sendMessage(chatId, 'Загрузка аудио доступна только админам')
@@ -43,13 +48,63 @@ export class MessageListener {
             return;
         }
 
+        if (isAudioMessage) {
+            this.parseSoundFile(msg)
+                .then((soundFile: SoundFile) => {
+                    this.saveAndSendVoice(msg, soundFile);
+                })
+                .catch((err) => {
+                    this.logger.error('Ошибка при загрузке файла', err);
+                });
+            return;
+        }
 
-        this.parseSoundFile(msg)
-            .then((soundFile: SoundFile) => {
-                this.saveAndSendVoice(msg, soundFile);
-            })
+        if (!msg.text || !msg.text.startsWith('!')) {
+            return;
+        }
+
+        const command = msg.text.slice(1, msg.text.length).toUpperCase();
+
+        switch (command) {
+            case Command.LIST:
+                this.sendList(chatId, false);
+                break;
+            case Command.LIST_SORT:
+                this.sendList(chatId, true);
+                break;
+            default:
+                return;
+        }
+
+    }
+
+    private async sendList(chatId: number, isSorted: boolean): Promise<void> {
+
+        let resultAudioList: CustomVoice[] = [];
+
+        await this.db.getAllVoices(this.botInstance.getBotId(), true, 100, 0)
+            .then((voices: CustomVoice[]) => {
+                if (voices === undefined || voices.length === 0) {
+                    return;
+                }
+                resultAudioList = [...voices];
+                if (isSorted) {
+                    resultAudioList.sort((a, b) => Number(a.id) - Number(b.id));
+                }
+            });
+
+        let messageWithList = 'Список аудио:\n\n';
+        let count = 1;
+        resultAudioList.forEach((voice) => {
+            const isHidden = Boolean(voice.isHidden) ? '(🔒)' : ''
+            let messagePattern = `#${count} | id-${voice.id})  <code>${voice.title}</code> ${isHidden}\n`;
+            messageWithList += messagePattern;
+            count++;
+        });
+
+        this.bot.sendMessage(chatId, messageWithList, {parse_mode: 'HTML'})
             .catch((err) => {
-                this.logger.error('Ошибка при загрузке файла', err);
+                this.logger.error('Ошибка отправки сообщения', err);
             });
     }
 
@@ -103,6 +158,14 @@ export class MessageListener {
             botId: this.botInstance.getBotId() ?? 0,
             isHidden: false
         };
+    }
+
+    private checkMessageContainsAudio(msg: ExtendedMessage): boolean {
+        if (msg.audio !== undefined || msg.voice !== undefined || msg.via_bot !== undefined) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private async parseSoundFile(msg: ExtendedMessage): Promise<SoundFile> {

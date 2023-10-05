@@ -6,8 +6,8 @@ import { createLogger } from '../utils/logger/logger';
 import { DataBase } from '../config/database/DataBase';
 import { CacheInfo, CallbackQueryInlineButtonType, CustomVoice } from '../utils/types/type';
 import * as NodeCache from 'node-cache';
-import TelegramBot = require('node-telegram-bot-api');
 import { getReplayInlineKeyboard } from '../utils/inline/inlineKeyboard';
+import TelegramBot = require('node-telegram-bot-api');
 
 export class CallbackQueryListener {
     private readonly logger: ILogger = createLogger('CallbackQueryListener');
@@ -62,20 +62,20 @@ export class CallbackQueryListener {
                 this.removeFromCache(ctx, messageIdQuery, ctx.message.chat.id);
             }
         } else if (callbackQueryInlineButtonType === CallbackQueryInlineButtonType.SWITCH_HIDDEN) {
-            const customVoice: CustomVoice = {...cache.customVoice, isHidden: !cache.customVoice.isHidden};
+            const customVoice: CustomVoice = { ...cache.customVoice, isHidden: !cache.customVoice.isHidden };
             this.updateCacheCustomVoice(customVoice, ctx, messageIdQuery, ctx.message.chat.id);
             this.updateInlineKeyboard(customVoice, ctx);
         }
     }
 
-    private updateInlineKeyboard(customVoice: CustomVoice, ctx: CallbackQuery){
+    private updateInlineKeyboard(customVoice: CustomVoice, ctx: CallbackQuery) {
 
         this.bot.editMessageReplyMarkup(getReplayInlineKeyboard(customVoice), {
             chat_id: ctx.message?.chat.id,
             message_id: ctx.message?.message_id
         }).catch((err) => {
             this.logger.error('Ошибка при отправке результата обработки сообщения', err);
-        })
+        });
     }
 
     private removeFromCache(ctx: CallbackQuery, messageIdQuery: number, chatId: number) {
@@ -102,10 +102,10 @@ export class CallbackQueryListener {
 
         const cache = this.voiceCache.get<CacheInfo[]>(ctx.message.chat.id)?.map((cacheInfo: CacheInfo) => {
             if (cacheInfo.messageId == messageIdQuery - 1) {
-                return {...cacheInfo, customVoice}
+                return { ...cacheInfo, customVoice };
             }
             return cacheInfo;
-        })
+        });
 
         if (cache === undefined) {
             this.logger.error('Не найдено голосовое сообщение в кэше');
@@ -117,11 +117,12 @@ export class CallbackQueryListener {
 
     private sendCompleteMessage(ctx: CallbackQuery, messageIdQuery: number) {
         const completeMessage = ctx.message?.caption + '\n\n' + 'Голосовое сообщение успешно сохранено✅';
+
         this.bot.editMessageCaption(completeMessage, {
             chat_id: ctx.message?.chat.id,
             message_id: messageIdQuery,
             reply_markup: undefined,
-            parse_mode: 'HTML'
+            caption_entities: ctx.message?.caption_entities
         });
     }
 
