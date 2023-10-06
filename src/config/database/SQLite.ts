@@ -61,7 +61,7 @@ export class SQLite extends DataBase {
 
     async getAllVoices(botId: number | undefined, isHidden: boolean, limit: number, offset: number): Promise<CustomVoice[]> {
         return new Promise((resolve, reject) => {
-            this.queryAll<CustomVoice>(`SELECT id, inline_type AS inlineType, title, voice_url AS voiceUrl, bot_id AS botId, is_hidden AS isHidden
+            this.queryAll<CustomVoice>(`SELECT id, inline_type AS inlineType, title, voice_url, bot_id AS botId, is_hidden AS isHidden
                                         FROM audio_inline
                                         WHERE bot_id = ?
                                             AND is_hidden = 0
@@ -76,7 +76,7 @@ export class SQLite extends DataBase {
 
     async getVoiceById(id: number): Promise<CustomVoice> {
         return new Promise((resolve, reject) => {
-            this.queryGet<CustomVoice>(`SELECT id, inline_type AS inlineType, title, voice_url AS voiceUrl, bot_id AS botId, is_hidden AS isHidden
+            this.queryGet<CustomVoice>(`SELECT id, inline_type AS inlineType, title, voice_url, bot_id AS botId, is_hidden AS isHidden
                                         FROM audio_inline
                                         WHERE id = ?
                                         LIMIT (1)`, [id])
@@ -87,7 +87,7 @@ export class SQLite extends DataBase {
 
     async getVoiceByTitleInclude(title: string, botId: number | undefined, isHidden: boolean, limit: number, offset: number): Promise<CustomVoice[]> {
         return new Promise((resolve, reject) => {
-            this.queryAll<CustomVoice>(`SELECT id, inline_type AS inlineType, title, voice_url AS voiceUrl, bot_id AS botId, is_hidden AS isHidden
+            this.queryAll<CustomVoice>(`SELECT id, inline_type AS inlineType, title, voice_url, bot_id AS botId, is_hidden AS isHidden
                                         FROM audio_inline
                                         WHERE title LIKE ?
                                           AND bot_id = ?
