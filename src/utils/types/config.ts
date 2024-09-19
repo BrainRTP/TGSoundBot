@@ -1,7 +1,6 @@
 export interface Config {
     adminList: number[];
     database: Database;
-    botToken: string;
     tempFileDir: string;
 }
 

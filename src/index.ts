@@ -6,6 +6,7 @@ import { DataBase } from './config/database/DataBase';
 import { DataBaseType } from './utils/types/config';
 import { ILogger } from 'js-logger';
 import {FileWriter} from "./utils/FileWriter";
+import { config as dotenvConfig } from 'dotenv';
 
 const logger: ILogger = createLogger('Main');
 let database: DataBase;
@@ -38,16 +39,18 @@ const initConfig = async (): Promise<BotConfig> => {
 
 const init = async (): Promise<void> => {
     try {
+        dotenvConfig()
         const config: BotConfig = await initConfig();
         const db: DataBase = await initDatabase(config);
-        const fileWriter = new FileWriter(config);
 
+        const fileWriter = new FileWriter(config);
         database = db;
-        const token: string | undefined = config.getConfig()?.botToken;
-        if (!token) {
-            throw new Error('Токен не найден');
+        const botToken = process.env.BOT_TOKEN;
+        if (!botToken) {
+            return Promise.reject(new Error('Переменная окружения BOT_TOKEN не найдена'));
         }
-        new Bot(token, config, db, fileWriter);
+
+        new Bot(botToken, config, db, fileWriter);
     } catch (e) {
         logger.error(e);
     }
