@@ -5,6 +5,7 @@ import { SQLite } from './config/database/SQLite';
 import { DataBase } from './config/database/DataBase';
 import { DataBaseType } from './utils/types/config';
 import { ILogger } from 'js-logger';
+import {FileWriter} from "./utils/FileWriter";
 
 const logger: ILogger = createLogger('Main');
 let database: DataBase;
@@ -39,13 +40,14 @@ const init = async (): Promise<void> => {
     try {
         const config: BotConfig = await initConfig();
         const db: DataBase = await initDatabase(config);
+        const fileWriter = new FileWriter(config);
 
         database = db;
         const token: string | undefined = config.getConfig()?.botToken;
         if (!token) {
             throw new Error('Токен не найден');
         }
-        new Bot(token, config, db);
+        new Bot(token, config, db, fileWriter);
     } catch (e) {
         logger.error(e);
     }

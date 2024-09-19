@@ -9,12 +9,14 @@ import TelegramBot = require('node-telegram-bot-api');
 import { ExtendedMessage } from './utils/types/type';
 import { CallbackQueryListener } from './eventListeners/callbackQueryListener';
 import * as NodeCache from 'node-cache';
+import {FileWriter} from "./utils/FileWriter";
 
 export class Bot {
     private readonly logger: ILogger = createLogger('Bot');
     private readonly db: DataBase;
     private readonly bot: TelegramBot;
     private readonly config: BotConfig;
+    private readonly fileWriter: FileWriter;
     private readonly voiceCache = new NodeCache({
         checkperiod: 600
     });
@@ -24,21 +26,25 @@ export class Bot {
     private messageHandler: MessageListener;
     private callbackHandler: CallbackQueryListener;
 
-    constructor(token: string, config: BotConfig, db: DataBase) {
+    constructor(token: string, config: BotConfig, db: DataBase, fileWriter: FileWriter) {
         this.bot = new TelegramBot(token, { polling: true });
         this.config = config;
         this.db = db;
+        this.fileWriter = fileWriter
         this.messageHandler = new MessageListener(this);
         this.inlineHandler = new InlineListener(this);
         this.callbackHandler = new CallbackQueryListener(this);
         this.setupListeners();
 
-        this.bot.getMe().then((user: User) => {
-            this.botId = user.id;
-        }).catch(err => {
-            this.logger.error(err);
-            throw new Error('Не удалось получить информацию о боте');
-        });
+        this.bot
+            .getMe()
+            .then((user: User) => {
+                this.botId = user.id;
+            })
+            .catch((err) => {
+                this.logger.error(err);
+                throw new Error('Не удалось получить информацию о боте');
+            });
     }
 
     getBot(): TelegramBot {
@@ -61,6 +67,10 @@ export class Bot {
         return this.voiceCache;
     }
 
+    getFileWriter(): FileWriter {
+        return this.fileWriter;
+    }
+
     private setupListeners() {
         let handlerCount = 0;
         this.bot.on('message', (message: Message, metadata: Metadata) => {
@@ -75,7 +85,7 @@ export class Bot {
 
         this.bot.on('callback_query', async (ctx: CallbackQuery) => {
             await this.callbackHandler.handleMessage(ctx);
-        })
+        });
 
         this.logger.info(`Загружено ${handlerCount} обработчика событий`);
     }

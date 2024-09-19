@@ -38,7 +38,12 @@ export interface SoundFile {
     fileName: string;
 }
 
+export interface SavedSoundFile extends SoundFile {
+    fileId: string;
+}
+
 export interface CacheInfo {
     messageId: number;
     customVoice: CustomVoice;
+    savedSoundFile: SavedSoundFile;
 }

@@ -1,5 +1,5 @@
 // Вспомогательный класс для обработки inline запросов
-import { InlineQuery, InlineQueryResultVoice } from 'node-telegram-bot-api';
+import {InlineQuery, InlineQueryResultVoice} from 'node-telegram-bot-api';
 import { Bot } from '../bot';
 import { ILogger } from 'js-logger';
 import { createLogger } from '../utils/logger/logger';
@@ -42,7 +42,8 @@ export class InlineListener {
                             id: String(index),
                             title: voice.title,
                             voice_url: voice.voice_url,
-                            type: 'voice'
+                            type: 'voice',
+                            caption: voice.title
                         } as InlineQueryResultVoice
                     ));
                 });
@@ -57,7 +58,8 @@ export class InlineListener {
                             id: String(index),
                             title: voice.title,
                             voice_url: voice.voice_url,
-                            type: 'voice'
+                            type: 'voice',
+                            caption: voice.title
                         } as InlineQueryResultVoice
                     ));
                 });

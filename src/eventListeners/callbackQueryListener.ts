@@ -52,6 +52,7 @@ export class CallbackQueryListener {
                     if (ctx.message?.chat !== undefined) {
                         this.removeFromCache(ctx, messageIdQuery, ctx.message.chat.id);
                     }
+                    this.botInstance.getFileWriter().deleteFile(cache.savedSoundFile)
                 })
                 .catch((err) => {
                     this.logger.error('Ошибка при сохранении голосового сообщения', err);
