@@ -6,5 +6,6 @@
     "type": "SQLITE",
     "databaseName": "database.db"
   },
-  "botToken": "your bot token"
+  "botToken": "your bot token",
+  "tempFileDir": "oggFiles"
 }
