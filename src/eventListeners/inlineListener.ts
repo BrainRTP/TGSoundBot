@@ -1,13 +1,16 @@
 // Вспомогательный класс для обработки inline запросов
-import {InlineQuery, InlineQueryResultVoice} from 'node-telegram-bot-api';
+import { InlineQuery, InlineQueryResultVoice } from 'node-telegram-bot-api';
 import { Bot } from '../bot';
 import { ILogger } from 'js-logger';
 import { createLogger } from '../utils/logger/logger';
 import { DataBase } from '../config/database/DataBase';
 import { CustomVoice } from '../utils/types/type';
-import TelegramBot = require('node-telegram-bot-api');
 import { BotConfig } from '../config/BotConfig';
+import TelegramBot = require('node-telegram-bot-api');
 
+/**
+ * [Дока InlineQueryResultVoice](https://core.telegram.org/bots/api/#inlinequeryresultvoice)
+ */
 export class InlineListener {
     private readonly offset: number = 15;
     private readonly logger: ILogger = createLogger('InlineListener');
@@ -32,43 +35,49 @@ export class InlineListener {
 
         if (query !== '') {
             this.logger.debug(`${ctx.from.username} -> ${query}`);
-            await this.db.getVoiceByTitleInclude(query, this.botInstance.getBotId(), isAdmin, this.offset, offset)
+            await this.db
+                .getVoiceByTitleInclude(query, this.botInstance.getBotId(), isAdmin, this.offset, offset)
                 .then((voices: CustomVoice[]) => {
                     if (voices === undefined || voices.length === 0) {
                         return;
                     }
-                    resultAudioList = voices.map((voice: CustomVoice, index) => (
-                        {
-                            id: String(index),
-                            title: voice.title,
-                            voice_url: voice.voice_url,
-                            type: 'voice',
-                            caption: voice.title
-                        } as InlineQueryResultVoice
-                    ));
+                    resultAudioList = voices.map(
+                        (voice: CustomVoice, index) =>
+                            ({
+                                id: String(index),
+                                title: voice.title,
+                                voice_url: voice.voice_url,
+                                type: 'voice',
+                                caption: voice.title
+                            }) as InlineQueryResultVoice
+                    );
                 });
         } else {
-            await this.db.getAllVoices(this.botInstance.getBotId(), isAdmin, this.offset, offset)
+            await this.db
+                .getAllVoices(this.botInstance.getBotId(), isAdmin, this.offset, offset)
                 .then((voices: CustomVoice[]) => {
                     if (voices === undefined || voices.length === 0) {
                         return;
                     }
-                    resultAudioList = voices.map((voice: CustomVoice, index) => (
-                        {
-                            id: String(index),
-                            title: voice.title,
-                            voice_url: voice.voice_url,
-                            type: 'voice',
-                            caption: voice.title
-                        } as InlineQueryResultVoice
-                    ));
+                    resultAudioList = voices.map(
+                        (voice: CustomVoice, index) =>
+                            ({
+                                id: String(index),
+                                title: voice.title,
+                                voice_url: voice.voice_url,
+                                type: 'voice',
+                                // Можно добавить вот это все https://core.telegram.org/bots/api/#formatting-options
+                                // в MarkdownV2
+                                caption: voice.title
+                            }) as InlineQueryResultVoice
+                    );
                 });
         }
 
-        this.bot.answerInlineQuery(ctx.id, resultAudioList, {next_offset: String(offset + this.offset)})
+        this.bot
+            .answerInlineQuery(ctx.id, resultAudioList, { next_offset: String(offset + this.offset) })
             .catch((err) => {
                 this.logger.error('err', err);
             });
     }
 }
-
