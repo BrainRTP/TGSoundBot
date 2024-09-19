@@ -1,3 +1,4 @@
+-- language: SQLite
 CREATE TABLE IF NOT EXISTS audio_inline
 (
     id          INTEGER PRIMARY KEY autoincrement,

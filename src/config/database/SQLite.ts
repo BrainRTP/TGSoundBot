@@ -32,7 +32,7 @@ export class SQLite extends DataBase {
     async createTable(): Promise<void> {
         let createTableSQL: string;
 
-        await fsPromises.readFile(`${this.sqlConfigFilepath}/init.sql`, { encoding: 'utf-8' })
+        await fsPromises.readFile(`${this.sqlConfigFilepath}/initSQLite.sql`, { encoding: 'utf-8' })
             .then((fileStr: string) => {
                 createTableSQL = fileStr;
             })

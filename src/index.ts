@@ -7,6 +7,7 @@ import { DataBaseType } from './utils/types/config';
 import { ILogger } from 'js-logger';
 import {FileWriter} from "./utils/FileWriter";
 import { config as dotenvConfig } from 'dotenv';
+import { PostgreSQL } from './config/database/PostgreSQL';
 
 const logger: ILogger = createLogger('Main');
 let database: DataBase;
@@ -20,7 +21,8 @@ const initDatabase = async (config: BotConfig): Promise<DataBase> => {
             db = new SQLite(config);
             break;
         case 'POSTGRESQL':
-            throw new Error('PostgreSQL не поддерживается');
+            db = new PostgreSQL(config);
+            break;
         default:
             db = new SQLite(config);
             break;
