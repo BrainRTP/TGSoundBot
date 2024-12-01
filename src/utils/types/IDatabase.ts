@@ -11,11 +11,11 @@ export interface IDatabase {
 
     queryInsert(sql: string, params?: any[]): Promise<void>;
 
-    getAllVoices(botId: number | undefined): Promise<CustomVoice[]>;
+    getAllVoices(botId: number | undefined, isHidden: boolean, limit: number, offset: number): Promise<CustomVoice[]>;
 
     getVoiceById(id: number): Promise<CustomVoice>;
 
-    getVoiceByTitleInclude(title: string, botId: number | undefined): Promise<CustomVoice[]>;
+    getVoiceByTitleInclude(title: string, botId: number | undefined, isHidden: boolean, limit: number, offset: number): Promise<CustomVoice[]>;
 
     saveVoice(voice: CustomVoice): Promise<void>;
 }

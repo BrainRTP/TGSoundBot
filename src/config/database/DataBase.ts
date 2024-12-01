@@ -18,11 +18,11 @@ export abstract class DataBase implements IDatabase {
 
     abstract queryInsert(sql: string, params?: any[]): Promise<void>;
 
-    abstract getAllVoices(botId: number | undefined): Promise<CustomVoice[]>;
+    abstract getAllVoices(botId: number | undefined, isHidden: boolean, limit: number, offset: number): Promise<CustomVoice[]>;
 
     abstract getVoiceById(id: number): Promise<CustomVoice>;
 
-    abstract getVoiceByTitleInclude(title: string, botId: number | undefined): Promise<CustomVoice[]>;
+    abstract getVoiceByTitleInclude(title: string, botId: number | undefined, isHidden: boolean, limit: number, offset: number): Promise<CustomVoice[]>;
 
     abstract createTable(): Promise<void>;
 

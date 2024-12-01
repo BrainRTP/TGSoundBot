@@ -21,3 +21,6 @@ idea/
 dist
 /src/resources/sql/database.db
 .env.development
+
+oggFiles
+.env

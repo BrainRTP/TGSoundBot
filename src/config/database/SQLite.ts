@@ -32,7 +32,7 @@ export class SQLite extends DataBase {
     async createTable(): Promise<void> {
         let createTableSQL: string;
 
-        await fsPromises.readFile(`${this.sqlConfigFilepath}/init.sql`, { encoding: 'utf-8' })
+        await fsPromises.readFile(`${this.sqlConfigFilepath}/initSQLite.sql`, { encoding: 'utf-8' })
             .then((fileStr: string) => {
                 createTableSQL = fileStr;
             })
@@ -51,19 +51,24 @@ export class SQLite extends DataBase {
             const voiceName: string = voice.title;
             const voicePath: string = voice.voice_url;
             const botId: number = voice.botId;
-            this.queryInsert(`INSERT INTO audio_inline (inline_type, title, voice_url, bot_id)
-                              VALUES ('voice', '${voiceName}', '${voicePath}', '${botId}')`)
+            const isHidden: number = Number(voice.isHidden);
+            this.queryInsert(`INSERT INTO audio_inline (inline_type, title, voice_url, bot_id, is_hidden)
+                              VALUES ('voice', '${voiceName}', '${voicePath}', '${botId}', '${isHidden}')`)
                 .then(() => resolve())
                 .catch(err => reject(err));
         });
     }
 
-    async getAllVoices(botId: number | undefined): Promise<CustomVoice[]> {
+    async getAllVoices(botId: number | undefined, isHidden: boolean, limit: number, offset: number): Promise<CustomVoice[]> {
         return new Promise((resolve, reject) => {
-            this.queryAll<CustomVoice>(`SELECT *
+            this.queryAll<CustomVoice>(`SELECT id, inline_type AS inlineType, title, voice_url, bot_id AS botId, is_hidden AS isHidden
                                         FROM audio_inline
                                         WHERE bot_id = ?
-                                        ORDER BY title ASC`, [botId])
+                                            AND is_hidden = 0
+                                           OR (is_hidden = 1 AND is_hidden = ?)
+                                        ORDER BY title ASC
+                                        LIMIT ?
+                                        OFFSET ?`, [botId, Number(isHidden), limit, offset])
                 .then((rows) => resolve(rows))
                 .catch(err => reject(err));
         });
@@ -71,7 +76,7 @@ export class SQLite extends DataBase {
 
     async getVoiceById(id: number): Promise<CustomVoice> {
         return new Promise((resolve, reject) => {
-            this.queryGet<CustomVoice>(`SELECT *
+            this.queryGet<CustomVoice>(`SELECT id, inline_type AS inlineType, title, voice_url, bot_id AS botId, is_hidden AS isHidden
                                         FROM audio_inline
                                         WHERE id = ?
                                         LIMIT (1)`, [id])
@@ -80,13 +85,16 @@ export class SQLite extends DataBase {
         });
     }
 
-    async getVoiceByTitleInclude(title: string, botId: number | undefined): Promise<CustomVoice[]> {
+    async getVoiceByTitleInclude(title: string, botId: number | undefined, isHidden: boolean, limit: number, offset: number): Promise<CustomVoice[]> {
         return new Promise((resolve, reject) => {
-            this.queryAll<CustomVoice>(`SELECT *
+            this.queryAll<CustomVoice>(`SELECT id, inline_type AS inlineType, title, voice_url, bot_id AS botId, is_hidden AS isHidden
                                         FROM audio_inline
                                         WHERE title LIKE ?
                                           AND bot_id = ?
-                                        ORDER BY title ASC`, [`%${title}%`, botId])
+                                          AND is_hidden = 0 OR (is_hidden = 1 AND is_hidden = ?)
+                                        ORDER BY title ASC
+                                        LIMIT ?
+                                        OFFSET ?`, [`%${title}%`, botId, Number(isHidden), limit, offset])
                 .then((rows: CustomVoice[]) => resolve(rows))
                 .catch(err => reject(err));
         });

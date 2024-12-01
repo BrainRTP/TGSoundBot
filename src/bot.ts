@@ -1,5 +1,5 @@
 import { MessageListener } from './eventListeners/messageListener';
-import { InlineQuery, Message, Metadata, User } from 'node-telegram-bot-api';
+import { CallbackQuery, ChosenInlineResult, InlineQuery, Message, Metadata, User } from 'node-telegram-bot-api';
 import { InlineListener } from './eventListeners/inlineListener';
 import { ILogger } from 'js-logger';
 import { createLogger } from './utils/logger/logger';
@@ -7,31 +7,44 @@ import { BotConfig } from './config/BotConfig';
 import { DataBase } from './config/database/DataBase';
 import TelegramBot = require('node-telegram-bot-api');
 import { ExtendedMessage } from './utils/types/type';
+import { CallbackQueryListener } from './eventListeners/callbackQueryListener';
+import * as NodeCache from 'node-cache';
+import {FileWriter} from "./utils/FileWriter";
 
 export class Bot {
     private readonly logger: ILogger = createLogger('Bot');
     private readonly db: DataBase;
     private readonly bot: TelegramBot;
     private readonly config: BotConfig;
+    private readonly fileWriter: FileWriter;
+    private readonly voiceCache = new NodeCache({
+        checkperiod: 600
+    });
 
     private botId?: number;
     private inlineHandler: InlineListener;
     private messageHandler: MessageListener;
+    private callbackHandler: CallbackQueryListener;
 
-    constructor(token: string, config: BotConfig, db: DataBase) {
+    constructor(token: string, config: BotConfig, db: DataBase, fileWriter: FileWriter) {
         this.bot = new TelegramBot(token, { polling: true });
         this.config = config;
         this.db = db;
+        this.fileWriter = fileWriter
         this.messageHandler = new MessageListener(this);
         this.inlineHandler = new InlineListener(this);
+        this.callbackHandler = new CallbackQueryListener(this);
         this.setupListeners();
 
-        this.bot.getMe().then((user: User) => {
-            this.botId = user.id;
-        }).catch(err => {
-            this.logger.error(err);
-            throw new Error('Не удалось получить информацию о боте');
-        });
+        this.bot
+            .getMe()
+            .then((user: User) => {
+                this.botId = user.id;
+            })
+            .catch((err) => {
+                this.logger.error(err);
+                throw new Error('Не удалось получить информацию о боте');
+            });
     }
 
     getBot(): TelegramBot {
@@ -50,6 +63,14 @@ export class Bot {
         return this.botId;
     }
 
+    getVoiceCache(): NodeCache {
+        return this.voiceCache;
+    }
+
+    getFileWriter(): FileWriter {
+        return this.fileWriter;
+    }
+
     private setupListeners() {
         let handlerCount = 0;
         this.bot.on('message', (message: Message, metadata: Metadata) => {
@@ -61,6 +82,10 @@ export class Bot {
             await this.inlineHandler.handleMessage(ctx);
         });
         handlerCount++;
+
+        this.bot.on('callback_query', async (ctx: CallbackQuery) => {
+            await this.callbackHandler.handleMessage(ctx);
+        });
 
         this.logger.info(`Загружено ${handlerCount} обработчика событий`);
     }
